@@ -1,11 +1,11 @@
 import { Video, VideoOff, Mic, MicOff } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import squirrel1 from 'figma:asset/6d82f2931867b3c6d68b5649df47ec607898cf1a.png';
-import squirrel2 from 'figma:asset/e5ab077641e3f6320814ea5e3159283b5acf12df.png';
-import squirrel3 from 'figma:asset/f647707b8fe15358a52ae4e7c982648c87e330af.png';
-import squirrel4 from 'figma:asset/29a51df8395533b40a76abdd3d64b989582fb1f8.png';
-import squirrel5 from 'figma:asset/8458bca1bd470fa67e2ae839444a81b6dd3616a1.png';
-import squirrel6 from 'figma:asset/ebd1431298e3a174f322b95ac2015419e5ef4aef.png';
+import squirrel1 from '@/assets/6d82f2931867b3c6d68b5649df47ec607898cf1a.png';
+import squirrel2 from '@/assets/e5ab077641e3f6320814ea5e3159283b5acf12df.png';
+import squirrel3 from '@/assets/f647707b8fe15358a52ae4e7c982648c87e330af.png';
+import squirrel4 from '@/assets/29a51df8395533b40a76abdd3d64b989582fb1f8.png';
+import squirrel5 from '@/assets/8458bca1bd470fa67e2ae839444a81b6dd3616a1.png';
+import squirrel6 from '@/assets/ebd1431298e3a174f322b95ac2015419e5ef4aef.png';
 
 const squirrelImages = [squirrel1, squirrel2, squirrel3, squirrel4, squirrel5, squirrel6];
 
