@@ -1,11 +1,11 @@
 import { Video, VideoOff, Mic, MicOff } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import squirrel1 from '@/assets/6d82f2931867b3c6d68b5649df47ec607898cf1a.png';
-import squirrel2 from '@/assets/e5ab077641e3f6320814ea5e3159283b5acf12df.png';
-import squirrel3 from '@/assets/f647707b8fe15358a52ae4e7c982648c87e330af.png';
-import squirrel4 from '@/assets/29a51df8395533b40a76abdd3d64b989582fb1f8.png';
-import squirrel5 from '@/assets/8458bca1bd470fa67e2ae839444a81b6dd3616a1.png';
-import squirrel6 from '@/assets/ebd1431298e3a174f322b95ac2015419e5ef4aef.png';
+import squirrel1 from '@/assets/cheerful.png';
+import squirrel2 from '@/assets/confused.png';
+import squirrel3 from '@/assets/embarrassed.png';
+import squirrel4 from '@/assets/encouraged.png';
+import squirrel5 from '@/assets/focused.png';
+import squirrel6 from '@/assets/surprised.png';
 
 const squirrelImages = [squirrel1, squirrel2, squirrel3, squirrel4, squirrel5, squirrel6];
 
@@ -63,8 +63,8 @@ export function VideoCall() {
   }, []);
 
   return (
-    <div className="relative w-full h-full flex flex-col gap-2">
-      {/* Your video - top half */}
+    <div className="relative w-full h-full flex flex-col">
+      {/* Your video - main camera box */}
       <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden relative">
         {isVideoOn && !cameraError ? (
           <video
@@ -89,22 +89,22 @@ export function VideoCall() {
         <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs">
           You
         </div>
-      </div>
 
-      {/* Squirrel video - bottom half */}
-      <div className="flex-1 bg-gray-900 rounded-lg overflow-hidden relative">
-        <img
-          src={squirrelImages[currentImageIndex]}
-          alt="Nutty the Squirrel"
-          className="w-full h-full object-contain bg-white"
-        />
-        <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs">
-          Nutty the Squirrel
+        {/* Squirrel video - corner picture-in-picture */}
+        <div className="absolute bottom-4 right-4 w-48 h-48 bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700 shadow-lg">
+          <img
+            src={squirrelImages[currentImageIndex]}
+            alt="Acorn the Squirrel"
+            className="w-full h-full object-contain bg-white"
+          />
+          <div className="absolute top-1 left-1 bg-black/60 text-white px-1.5 py-0.5 rounded text-xs">
+            Acorn
+          </div>
         </div>
       </div>
 
       {/* Video controls overlay */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
         <button
           onClick={() => setIsMicOn(!isMicOn)}
           className={`p-2 rounded-full transition-colors ${

@@ -25,7 +25,7 @@ export function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm Nutty's assistant. How can I help you today?",
+      text: "Hi! My name is Acorn, how can I help today?",
       sender: 'bot',
       timestamp: new Date(),
     },

@@ -11,23 +11,23 @@ export function Root() {
         <nav className="flex gap-4">
           <Link
             to="/"
-            className={`text-sm px-3 py-1 rounded ${
+            className={`text-sm px-3 py-1 rounded border ${
               location.pathname === '/'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-500'
             }`}
           >
-            Video Call
+            Video Call 🎥
           </Link>
           <Link
             to="/chat-log"
-            className={`text-sm px-3 py-1 rounded ${
+            className={`text-sm px-3 py-1 rounded border ${
               location.pathname === '/chat-log'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-500'
             }`}
           >
-            Chat Log
+            Chat Log 💬
           </Link>
         </nav>
       </header>
