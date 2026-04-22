@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { PhoneOff } from 'lucide-react';
-import { VideoCall } from './VideoCall';
-import { Chatbot } from './Chatbot';
-import { Button } from './ui/button';
+import { useState } from "react";
+import { PhoneOff } from "lucide-react";
+import { VideoCall } from "./VideoCall";
+import { Chatbot } from "./Chatbot";
+import { Button } from "./ui/button";
 
 export function Home() {
   const [callEnded, setCallEnded] = useState(false);
@@ -17,7 +17,9 @@ export function Home() {
         <div className="text-center">
           <div className="text-4xl mb-2">👋</div>
           <h1 className="text-xl mb-1">Call Ended</h1>
-          <p className="text-gray-600 text-sm mb-3">Thanks for chatting with Nutty!</p>
+          <p className="text-gray-600 text-sm mb-3">
+            Thanks for chatting with Nutty!
+          </p>
           <Button onClick={() => setCallEnded(false)} size="sm">
             Rejoin Call
           </Button>
