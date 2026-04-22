@@ -18,6 +18,8 @@ Before running locally, download the model files:
 4. Download `model_quantized.onnx` into `public/_models/distilgpt2/onnx/`
 
 Final structure should be:
+
+```bash
 public/\_models/distilgpt2/
 ├── config.json
 ├── tokenizer.json
@@ -28,6 +30,7 @@ public/\_models/distilgpt2/
 ├── merges.txt
 ├── quantize_config.json
 └── onnx/
-└── model_quantized.onnx
+    └── model_quantized.onnx
+```
 
 The chat requires Google Chrome or Microsoft Edge (WebGPU).Sonnet 4.6
