@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { pipeline, env } from "@huggingface/transformers";
+import { pipeline } from "@huggingface/transformers";
 
 type Status = "idle" | "loading" | "ready" | "generating" | "error";
 
@@ -19,40 +19,15 @@ export function useTextGenerator() {
       setStatus("loading");
 
       try {
-        env.localModelPath = "/_models/";
-        env.allowLocalModels = true;
-        env.allowRemoteModels = false;
-
-        // Debug logs
-        console.log("env.localModelPath:", env.localModelPath);
-        console.log("env.allowLocalModels:", env.allowLocalModels);
-        console.log("env.allowRemoteModels:", env.allowRemoteModels);
-        console.log("navigator.gpu:", navigator.gpu);
-        console.log(
-          "Expected config URL:",
-          `${env.localModelPath}Xenova/distilgpt2/config.json`,
+        console.log("Start pipeline loading...");
+        generatorRef.current = await pipeline(
+          "text-generation",
+          "onnx-community/Qwen2.5-0.5B-Instruct",
+          { dtype: "q4", device: "webgpu" },
         );
-        console.log("Starting pipeline load...");
-
-        // generatorRef.current = await pipeline("text-generation", "distilgpt2", {
-        //   device: "webgpu",
-        //   dtype: "q4",
-        //   model_file_name: "model_quantized",
-        // });
-
-        // Temporarily remove all env config and use remote
-        generatorRef.current = await pipeline("text-generation", "distilgpt2", {
-          device: "webgpu",
-          dtype: "q8",
-        });
-
-        console.log("Pipeline loaded successfully:", generatorRef.current);
         setStatus("ready");
       } catch (err) {
         console.error("Model load error:", err);
-        console.error("Error name:", (err as Error).name);
-        console.error("Error message:", (err as Error).message);
-        console.error("Error stack:", (err as Error).stack);
         setStatus("error");
         setErrorMessage("Failed to load model. Please refresh and try again.");
       }
@@ -67,16 +42,26 @@ export function useTextGenerator() {
     setStatus("generating");
 
     try {
-      const outputs = await generatorRef.current(
-        `You are Acorn, a helpful assistant with American Sign Language Learning. User: ${prompt}\nAcorn:`,
+      const messages = [
         {
-          max_new_tokens: 150,
-          do_sample: true,
-          temperature: 0.7,
+          role: "system",
+          content:
+            "You are Acorn, a helpful assistant specializing in American Sign Language learning.",
         },
-      );
+        {
+          role: "user",
+          content: prompt,
+        },
+      ];
 
-      return outputs[0].generated_text ?? "No response generated.";
+      const output = await generatorRef.current(messages, {
+        max_new_tokens: 128,
+      });
+
+      // Extract the assistant's reply from the last message
+      return (
+        output[0].generated_text.at(-1).content ?? "No response generated."
+      );
     } catch (err) {
       console.error("Generation error:", err);
       return "Something went wrong. Please try again.";
