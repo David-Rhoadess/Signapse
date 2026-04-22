@@ -20,7 +20,7 @@ Before running locally, download the model files:
 Final structure should be:
 
 ```bash
-public/\_models/distilgpt2/
+public/_models/distilgpt2/
 ├── config.json
 ├── tokenizer.json
 ├── tokenizer_config.json
