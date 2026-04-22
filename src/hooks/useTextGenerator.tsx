@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { pipeline } from "@huggingface/transformers";
+import { systemPrompt } from "../constants/systemPrompt";
 
 type Status = "idle" | "loading" | "ready" | "generating" | "error";
 
@@ -45,8 +46,7 @@ export function useTextGenerator() {
       const messages = [
         {
           role: "system",
-          content:
-            "You are Acorn, a helpful assistant specializing in American Sign Language learning.",
+          content: systemPrompt,
         },
         {
           role: "user",
