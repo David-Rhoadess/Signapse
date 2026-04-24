@@ -8,24 +8,23 @@ import { useTextGenerator } from "../../hooks/useTextGenerator";
 interface Message {
   id: string;
   text: string;
-  sender: "user" | "bot";
+  sender: "user" | "system";
   timestamp: Date;
 }
 
+const initMessage = {
+  id: "1",
+  text: "Hello! I am Acorn, your ASL practice partner. So glad you are here. Let us start easy. Can you say hello to me?",
+  sender: "system",
+  timestamp: new Date(),
+};
+
 export function Chatbot() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! I am Acorn, your ASL practice partner. So glad you are here. Let us start easy. Can you say hello to me?",
-      sender: "bot",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{ initMessage }]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Replace the botResponses array and setTimeout with this
-  const { status, errorMessage, generate } = useTextGenerator();
+  const { status, errorMessage, generate, resetHistory } = useTextGenerator();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,16 +43,15 @@ export function Chatbot() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    // Call the LLM instead of random botResponses
     const reply = await generate(input);
 
-    const botMessage: Message = {
+    const systemMessage: Message = {
       id: (Date.now() + 1).toString(),
       text: reply,
-      sender: "bot",
+      sender: "system",
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, botMessage]);
+    setMessages((prev) => [...prev, systemMessage]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -63,11 +61,24 @@ export function Chatbot() {
     }
   };
 
+  function handleClear() {
+    setMessages([initMessage]);
+    resetHistory();
+  }
+
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow-lg min-h-0">
       {/* Chat header */}
-      <div className="p-2 border-b">
+
+      <div className="p-2 border-b flex items-center justify-between">
         <h2 className="text-sm font-semibold">Chat with Assistant</h2>
+        <button
+          onClick={handleClear}
+          disabled={status !== "ready"}
+          className="text-xs text-gray-500 hover:text-blue-500 disabled:opacity-40 transition-colors"
+        >
+          New Chat
+        </button>
       </div>
 
       {/* Model status banners */}
@@ -100,7 +111,6 @@ export function Chatbot() {
               </div>
             </div>
           ))}
-
           {/* Thinking indicator */}
           {status === "generating" && (
             <div className="flex justify-start">
@@ -109,7 +119,6 @@ export function Chatbot() {
               </div>
             </div>
           )}
-
           <div ref={bottomRef} /> {/* 👈 auto-scroll target */}
         </div>
       </ScrollArea>
