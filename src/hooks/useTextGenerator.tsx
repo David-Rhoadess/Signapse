@@ -39,9 +39,9 @@ export function useTextGenerator() {
         modelRef.current =
           await Qwen3_5ForConditionalGeneration.from_pretrained(model_id, {
             dtype: {
-              embed_tokens: "q4",
-              vision_encoder: "fp16",
-              decoder_model_merged: "q4",
+              embed_tokens: "q4f16",
+              // vision_encoder: ,
+              decoder_model_merged: "q4f16",
             },
             device: "webgpu",
           });
