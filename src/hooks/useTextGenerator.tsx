@@ -64,16 +64,17 @@ export function useTextGenerator() {
     setStatus("generating");
     setErrorMessage(null);
 
-    const userMessage: ChatMessage = {
-      role: "user",
-      content: prompt,
-    };
+    try {
+      const newMessage: ChatMessage = {
+        role: "user",
+        content: prompt,
+      };
 
     try {
       const messages = [
         { role: "system", content: systemPrompt },
         ...conversationHistory.current,
-        userMessage,
+        newMessage,
       ];
 
       const text = processorRef.current.apply_chat_template(messages, {
@@ -102,10 +103,9 @@ export function useTextGenerator() {
 
       conversationHistory.current = [
         ...conversationHistory.current,
-        userMessage,
+        newMessage,
         { role: "assistant", content: reply },
       ];
-
       setStatus("ready");
       return reply;
     } catch (err) {
