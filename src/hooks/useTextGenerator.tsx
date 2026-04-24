@@ -44,42 +44,48 @@ export function useTextGenerator() {
   }, []);
 
   async function generate(prompt: string): Promise<string> {
-    if (!generatorRef.current || status !== "ready") return "";
+    if (!generatorRef.current || status !== "ready") {
+      return "Model is not ready yet.";
+    }
 
     setStatus("generating");
+    setErrorMessage(null);
 
     try {
-      // Add the new user message to history
-      conversationHistory.current.push({
+      const newMessage: ChatMessage = {
         role: "user",
         content: prompt,
-      });
+      };
 
       const messages = [
         { role: "system", content: systemPrompt },
-        ...conversationHistory.current, // include full history
+        ...conversationHistory.current,
+        newMessage,
       ];
 
       const output = await generatorRef.current(messages, {
         max_new_tokens: 128,
       });
 
-      const reply = output[0].generated_text.at(-1).content ?? "No response generated.";
+      const reply =
+        output?.[0]?.generated_text?.at(-1)?.content ??
+        "No response generated.";
 
-      // Save the assistant's reply to history
-      conversationHistory.current.push({
-        role: "assistant",
-        content: reply,
-      });
+      conversationHistory.current = [
+        ...conversationHistory.current,
+        newMessage,
+        { role: "assistant", content: reply },
+      ];
 
+      setStatus("ready");
       return reply;
     } catch (err) {
       console.error("Generation error:", err);
-      // Remove the user message if generation failed
-      conversationHistory.current.pop();
+
+      setStatus("error");
+      setErrorMessage("Failed to generate response.");
+
       return "Something went wrong. Please try again.";
-    } finally {
-      setStatus("ready");
     }
   }
 
