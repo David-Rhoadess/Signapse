@@ -23,8 +23,8 @@ export function useTextGenerator() {
         console.log("Start pipeline loading...");
         generatorRef.current = await pipeline(
           "text-generation",
-          "onnx-community/Qwen2.5-0.5B-Instruct",
-          { dtype: "q4", device: "webgpu" },
+          "onnx-community/gemma-3-1b-it-ONNX",
+          { dtype: "q4f16", device: "webgpu" },
         );
         setStatus("ready");
       } catch (err) {
