@@ -12,7 +12,7 @@ interface Message {
   timestamp: Date;
 }
 
-const initMessage = {
+const initMessage: Message = {
   id: "1",
   text: "Hello! I am Acorn, your ASL practice partner. So glad you are here. Let us start easy. Can you say hello to me?",
   sender: "system",
@@ -20,7 +20,7 @@ const initMessage = {
 };
 
 export function Chatbot() {
-  const [messages, setMessages] = useState<Message[]>([{ initMessage }]);
+  const [messages, setMessages] = useState<Message[]>([initMessage]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 

@@ -16,6 +16,7 @@ export function useTextGenerator() {
   const modelRef = useRef<any>(null);
   const processorRef = useRef<any>(null);
   const conversationHistory = useRef<ChatMessage[]>([]);
+
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -28,12 +29,13 @@ export function useTextGenerator() {
       }
 
       setStatus("loading");
+      setErrorMessage(null);
 
       try {
-        console.log("Start pipeline loading...");
         const model_id = "onnx-community/Qwen3.5-0.8B-ONNX";
 
         processorRef.current = await AutoProcessor.from_pretrained(model_id);
+
         modelRef.current =
           await Qwen3_5ForConditionalGeneration.from_pretrained(model_id, {
             dtype: {
@@ -43,6 +45,7 @@ export function useTextGenerator() {
             },
             device: "webgpu",
           });
+
         setStatus("ready");
       } catch (err) {
         console.error("Model load error:", err);
@@ -55,30 +58,35 @@ export function useTextGenerator() {
   }, []);
 
   async function generate(prompt: string): Promise<string> {
-    if (!modelRef.current || !processorRef.current || status !== "ready")
-      return "";
+    if (!modelRef.current || !processorRef.current) {
+      return "Model is not ready yet.";
+    }
+
+    if (status !== "ready") {
+      return "Model is still loading.";
+    }
 
     setStatus("generating");
+    setErrorMessage(null);
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: prompt,
+    };
 
     try {
-      // Add user message to history
-      conversationHistory.current.push({
-        role: "user",
-        content: prompt,
-      });
-
       const messages = [
         { role: "system", content: systemPrompt },
         ...conversationHistory.current,
+        userMessage,
       ];
 
-      // Format messages for Qwen
       const text = processorRef.current.apply_chat_template(messages, {
         add_generation_prompt: true,
       });
+
       const inputs = await processorRef.current(text);
 
-      // Run generation
       const outputIds = await modelRef.current.generate({
         ...inputs,
         max_new_tokens: 512,
@@ -87,34 +95,38 @@ export function useTextGenerator() {
         do_sample: true,
       });
 
-      // Decode only the new tokens (strip the prompt)
       const newTokens = outputIds.slice(null, [
         inputs.input_ids.dims.at(-1),
         null,
       ]);
+
       const reply =
         processorRef.current.batch_decode(newTokens, {
           skip_special_tokens: true,
         })[0] ?? "No response generated.";
 
-      // Save assistant reply to history
-      conversationHistory.current.push({
-        role: "assistant",
-        content: reply,
-      });
+      conversationHistory.current = [
+        ...conversationHistory.current,
+        userMessage,
+        { role: "assistant", content: reply },
+      ];
 
+      setStatus("ready");
       return reply;
     } catch (err) {
       console.error("Generation error:", err);
-      conversationHistory.current.pop();
+
+      setStatus("error");
+      setErrorMessage("Failed to generate response.");
+
       return "Something went wrong. Please try again.";
-    } finally {
-      setStatus("ready");
     }
   }
 
   function resetHistory() {
     conversationHistory.current = [];
+    setErrorMessage(null);
+    setStatus("ready");
   }
 
   return { status, errorMessage, generate, resetHistory };
