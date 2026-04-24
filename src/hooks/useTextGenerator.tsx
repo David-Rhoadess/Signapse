@@ -64,11 +64,10 @@ export function useTextGenerator() {
     setStatus("generating");
     setErrorMessage(null);
 
-    try {
-      const newMessage: ChatMessage = {
-        role: "user",
-        content: prompt,
-      };
+    const newMessage: ChatMessage = {
+      role: "user",
+      content: prompt,
+    };
 
     try {
       const messages = [
@@ -106,14 +105,13 @@ export function useTextGenerator() {
         newMessage,
         { role: "assistant", content: reply },
       ];
+
       setStatus("ready");
       return reply;
     } catch (err) {
       console.error("Generation error:", err);
-
-      setStatus("error");
-      setErrorMessage("Failed to generate response.");
-
+      setStatus("ready"); // allow retry
+      setErrorMessage("Failed to generate response. Please try again.");
       return "Something went wrong. Please try again.";
     }
   }
