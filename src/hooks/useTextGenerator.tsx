@@ -22,11 +22,7 @@ export function useTextGenerator() {
 
   useEffect(() => {
     async function loadModel() {
-      if (!navigator.gpu) {
-        setStatus("error");
-        setErrorMessage("WebGPU is not supported. Please use Chrome or Edge.");
-        return;
-      }
+      const device = navigator.gpu ? "webgpu" : "wasm";
 
       setStatus("loading");
       setErrorMessage(null);
@@ -39,11 +35,10 @@ export function useTextGenerator() {
         modelRef.current =
           await Qwen3_5ForConditionalGeneration.from_pretrained(model_id, {
             dtype: {
-              embed_tokens: "q4f16",
-              // vision_encoder: ,
-              decoder_model_merged: "q4f16",
+              embed_tokens: device === "webgpu" ? "q4f16" : "q8",
+              decoder_model_merged: device === "webgpu" ? "q4f16" : "q8",
             },
-            device: "webgpu",
+            device,
           });
 
         setStatus("ready");
