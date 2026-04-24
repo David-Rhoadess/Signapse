@@ -22,16 +22,14 @@ export function Chatbot() {
     },
   ]);
   const [input, setInput] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // Replace the botResponses array and setTimeout with this
   const { status, errorMessage, generate } = useTextGenerator();
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, status]);
 
   const handleSend = async () => {
     if (!input.trim() || status !== "ready") return;
@@ -66,7 +64,7 @@ export function Chatbot() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-lg shadow-lg">
+    <div className="h-full flex flex-col bg-white rounded-lg shadow-lg min-h-0">
       {/* Chat header */}
       <div className="p-2 border-b">
         <h2 className="text-sm font-semibold">Chat with Assistant</h2>
@@ -83,10 +81,9 @@ export function Chatbot() {
           {errorMessage}
         </div>
       )}
-
-      {/* Messages area — unchanged */}
-      <ScrollArea className="flex-1 p-2">
-        <div ref={scrollRef} className="space-y-2">
+      {/* Messages area */}
+      <ScrollArea className="flex-1 p-2 min-h-0 overflow-y-auto">
+        <div className="space-y-2">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -112,6 +109,8 @@ export function Chatbot() {
               </div>
             </div>
           )}
+
+          <div ref={bottomRef} /> {/* 👈 auto-scroll target */}
         </div>
       </ScrollArea>
 

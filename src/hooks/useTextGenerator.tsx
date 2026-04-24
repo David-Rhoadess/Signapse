@@ -4,8 +4,14 @@ import { systemPrompt } from "../constants/systemPrompt";
 
 type Status = "idle" | "loading" | "ready" | "generating" | "error";
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export function useTextGenerator() {
   const generatorRef = useRef<any>(null);
+  const conversationHistory = useRef<ChatMessage[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,32 +49,43 @@ export function useTextGenerator() {
     setStatus("generating");
 
     try {
+      // Add the new user message to history
+      conversationHistory.current.push({
+        role: "user",
+        content: prompt,
+      });
+
       const messages = [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
+        { role: "system", content: systemPrompt },
+        ...conversationHistory.current, // include full history
       ];
 
       const output = await generatorRef.current(messages, {
         max_new_tokens: 128,
       });
 
-      // Extract the assistant's reply from the last message
-      return (
-        output[0].generated_text.at(-1).content ?? "No response generated."
-      );
+      const reply = output[0].generated_text.at(-1).content ?? "No response generated.";
+
+      // Save the assistant's reply to history
+      conversationHistory.current.push({
+        role: "assistant",
+        content: reply,
+      });
+
+      return reply;
     } catch (err) {
       console.error("Generation error:", err);
+      // Remove the user message if generation failed
+      conversationHistory.current.pop();
       return "Something went wrong. Please try again.";
     } finally {
       setStatus("ready");
     }
   }
 
-  return { status, errorMessage, generate };
+  function resetHistory() {
+    conversationHistory.current = [];
+  }
+
+  return { status, errorMessage, generate, resetHistory };
 }
