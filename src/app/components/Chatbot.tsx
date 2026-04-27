@@ -14,7 +14,7 @@ interface Message {
 
 const initMessage: Message = {
   id: "1",
-  text: "Hello! I am Acorn, your ASL practice partner. So glad you are here. Let us start easy. Can you say hello to me?",
+  text: "Hi! I am Acorn, your ASL practice partner. So glad you are here. Let's start easy. Can you say hello to me?",
   sender: "system",
   timestamp: new Date(),
 };
@@ -69,7 +69,6 @@ export function Chatbot() {
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow-lg min-h-0">
       {/* Chat header */}
-
       <div className="p-2 border-b flex items-center justify-between">
         <h2 className="text-sm font-semibold">Chat with Assistant</h2>
         <button
@@ -92,6 +91,7 @@ export function Chatbot() {
           {errorMessage}
         </div>
       )}
+
       {/* Messages area */}
       <ScrollArea className="flex-1 p-2 min-h-0 overflow-y-auto">
         <div className="space-y-2">
@@ -111,7 +111,6 @@ export function Chatbot() {
               </div>
             </div>
           ))}
-          {/* Thinking indicator */}
           {status === "generating" && (
             <div className="flex justify-start">
               <div className="bg-gray-200 text-gray-900 rounded-lg px-2 py-1">
@@ -119,14 +118,16 @@ export function Chatbot() {
               </div>
             </div>
           )}
-          <div ref={bottomRef} /> {/* 👈 auto-scroll target */}
+          <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
-      {/* Input area — unchanged except disabled states */}
+      {/* Input area */}
       <div className="p-2 border-t">
         <div className="flex gap-1">
           <Input
+            id="chat-input"
+            name="chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
@@ -137,7 +138,7 @@ export function Chatbot() {
                   ? "Acorn is thinking..."
                   : status === "error"
                     ? "Unavailable"
-                    : "Type a message..."
+                    : "Type ASL gloss..."
             }
             disabled={status !== "ready"}
             className="flex-1 h-8 text-sm"

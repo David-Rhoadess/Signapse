@@ -85,9 +85,7 @@ export function useTextGenerator() {
       const outputIds = await modelRef.current.generate({
         ...inputs,
         max_new_tokens: 512,
-        temperature: 1.0,
-        top_k: 20,
-        do_sample: true,
+        do_sample: false,
       });
 
       const newTokens = outputIds.slice(null, [
