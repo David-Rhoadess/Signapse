@@ -43,15 +43,29 @@ export function Chatbot() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    const reply = await generate(input);
+    const { corrected, reply } = await generate(input);
 
-    const systemMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: reply,
-      sender: "system",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, systemMessage]);
+    if (corrected && corrected !== input) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          text: `Corrected: ${corrected}`,
+          sender: "system" as const,
+          timestamp: new Date(),
+        },
+      ]);
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: (Date.now() + 1).toString(),
+        text: reply,
+        sender: "system" as const,
+        timestamp: new Date(),
+      },
+    ]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
