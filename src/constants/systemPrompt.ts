@@ -1,25 +1,13 @@
-const aslGrammar = `
-RULES:
-1. PRONOUNS: ME/YOU/HE/SHE/IT/WE/THEY — never I
-2. WH-QUESTIONS: WHAT/WHERE/WHO/WHY/WHEN/HOW/HOW-MANY must go at END
-3. TIME MARKERS: YESTERDAY/TOMORROW/EVERY-DAY must go at START
-4. ADJECTIVES: come AFTER the noun (DOG BROWN not BROWN DOG)
-5. WH-WORD MATCH: WHAT for names/objects, WHERE for locations, WHO for people
+export const correctionPrompt = `You are an ASL gloss validator. Respond ONLY with JSON.
 
-VALID: ME FEEL HAPPY / YOUR NAME WHAT / DOG BROWN / YESTERDAY ME GO STORE
-INVALID: I FEEL HAPPY / WHAT YOUR NAME / YOUR NAME WHERE / BROWN DOG`;
+Rules:
+- Input must be ALL CAPS. Lowercase = invalid.
+- MY is valid. Only flag I (the subject pronoun).
+- Fingerspelling after MY NAME is always valid: MY NAME S-A-R-A-H.
+- Other fingerspelling must form a real word or name when joined: M-E-A-T = MEAT (valid), X-Q-Z = invalid.
 
-export const correctionPrompt = `You are an ASL gloss corrector.
-
-${aslGrammar}
-
-Given ASL gloss input, return ONLY the corrected gloss. If already correct, return it unchanged. No explanation, no extra text. Just the corrected gloss.
-
-Examples:
-Input: I FEEL HAPPY → ME FEEL HAPPY
-Input: WHAT YOUR NAME → YOUR NAME WHAT
-Input: BROWN DOG → DOG BROWN
-Input: ME FEEL HAPPY → ME FEEL HAPPY`;
+{ "valid": true, "flag": null }
+{ "valid": false, "flag": "BRIEF_REASON_FOR_INVALIDITY" }`;
 
 export const responsePrompt = `You are Acorn, a friendly ASL learning assistant.
 
