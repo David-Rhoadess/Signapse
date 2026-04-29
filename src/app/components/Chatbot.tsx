@@ -56,19 +56,6 @@ export function Chatbot() {
       emotion,
     );
 
-    // If invalid, show the corrected gloss as a separate note
-    if (!valid && corrected) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          text: `Corrected: ${corrected}`,
-          sender: "system" as const,
-          timestamp: new Date(),
-        },
-      ]);
-    }
-
     // Always show Acorn's reply
     setMessages((prev) => [
       ...prev,
