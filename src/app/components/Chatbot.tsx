@@ -43,9 +43,21 @@ export function Chatbot() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    const { corrected, reply } = await generate(input);
+    const { valid, corrected, feedback, reply, emotion } =
+      await generate(input);
+    console.log(
+      "Valid:",
+      valid,
+      "| Corrected:",
+      corrected,
+      "| Feedback:",
+      feedback,
+      "| Emotion:",
+      emotion,
+    );
 
-    if (corrected && corrected !== input) {
+    // If invalid, show the corrected gloss as a separate note
+    if (!valid && corrected) {
       setMessages((prev) => [
         ...prev,
         {
@@ -57,6 +69,7 @@ export function Chatbot() {
       ]);
     }
 
+    // Always show Acorn's reply
     setMessages((prev) => [
       ...prev,
       {
@@ -66,6 +79,8 @@ export function Chatbot() {
         timestamp: new Date(),
       },
     ]);
+
+    // TODO: use emotion to update emoji
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

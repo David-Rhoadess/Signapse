@@ -12,6 +12,20 @@ interface ChatMessage {
   content: string;
 }
 
+interface CorrectionResult {
+  valid: boolean;
+  corrected: string | null;
+  feedback: string | null;
+}
+
+export interface GenerateResult {
+  valid: boolean;
+  corrected: string | null; // corrected ASL gloss, null if input was valid
+  feedback: string | null; // reason for correction, null if input was valid
+  reply: string; // Acorn's response
+  emotion: string; // one of the 6 emotions
+}
+
 export function useTextGenerator() {
   const modelRef = useRef<any>(null);
   const processorRef = useRef<any>(null);
@@ -48,7 +62,6 @@ export function useTextGenerator() {
     loadModel();
   }, []);
 
-  // Internal helper — runs a single inference call with a given system prompt
   async function runPipeline(
     systemContent: string,
     userContent: string,
@@ -85,57 +98,102 @@ export function useTextGenerator() {
     );
   }
 
-  async function generate(rawInput: string): Promise<{
-    corrected: string; // corrected ASL gloss from pipeline 1
-    reply: string; // English response from pipeline 2
-  }> {
+  function parseJSON<T>(raw: string, fallback: T): T {
+    try {
+      const cleaned = raw.replace(/```json|```/g, "").trim();
+      return JSON.parse(cleaned);
+    } catch {
+      console.warn("Failed to parse JSON:", raw);
+      return fallback;
+    }
+  }
+
+  async function generate(rawInput: string): Promise<GenerateResult> {
     if (!modelRef.current || !processorRef.current) {
-      return { corrected: "", reply: "Model is not ready yet." };
+      return {
+        valid: false,
+        corrected: null,
+        feedback: null,
+        reply: "Model is not ready yet.",
+        emotion: "confused",
+      };
     }
     if (status !== "ready") {
-      return { corrected: "", reply: "Model is still loading." };
+      return {
+        valid: false,
+        corrected: null,
+        feedback: null,
+        reply: "Model is still loading.",
+        emotion: "confused",
+      };
     }
 
     setStatus("generating");
     setErrorMessage(null);
 
     try {
-      // Pipeline 1 — correct the ASL gloss
-      const corrected = await runPipeline(
+      // Pipeline 1 — validate and correct ASL gloss
+      const rawCorrection = await runPipeline(
         correctionPrompt,
         rawInput,
-        [], // no history needed for correction
-        128, // short output, just the corrected gloss
+        [],
+        128,
       );
+      console.log("Pipeline 1 raw:", rawCorrection);
 
-      console.log("Pipeline 1 - Corrected gloss:", corrected);
+      const correctionResult = parseJSON<CorrectionResult>(rawCorrection, {
+        valid: false,
+        corrected: null,
+        feedback: "Could not parse correction.",
+      });
+      console.log("Pipeline 1 parsed:", correctionResult);
 
-      // Pipeline 2 — translate corrected gloss to English and respond
-      const reply = await runPipeline(
+      // Pipeline 2 — build input based on validation result
+      const pipeline2Input = correctionResult.valid
+        ? rawInput // valid: respond to original input
+        : `Original: "${rawInput}"\nCorrected: "${correctionResult.corrected}"\nReason: ${correctionResult.feedback}`;
+
+      const rawReply = await runPipeline(
         responsePrompt,
-        corrected,
-        conversationHistory.current, // pass history for context
+        pipeline2Input,
+        correctionResult.valid ? conversationHistory.current : [],
         256,
       );
+      console.log("Pipeline 2 raw:", rawReply);
 
-      console.log("Pipeline 2 - Reply:", reply);
+      const replyResult = parseJSON<{ emotion: string; reply: string }>(
+        rawReply,
+        { emotion: "confused", reply: rawReply },
+      );
+      console.log("Pipeline 2 parsed:", replyResult);
 
-      // Save to history using the corrected gloss as user turn
-      conversationHistory.current = [
-        ...conversationHistory.current,
-        { role: "user", content: corrected },
-        { role: "assistant", content: reply },
-      ];
+      // Only save valid exchanges to history
+      if (correctionResult.valid) {
+        conversationHistory.current = [
+          ...conversationHistory.current,
+          { role: "user", content: rawInput },
+          { role: "assistant", content: replyResult.reply },
+        ];
+      }
 
       setStatus("ready");
-      return { corrected, reply };
+      return {
+        valid: correctionResult.valid,
+        corrected: correctionResult.corrected,
+        feedback: correctionResult.feedback,
+        reply: replyResult.reply,
+        emotion: replyResult.emotion ?? "cheerful",
+      };
     } catch (err) {
       console.error("Generation error:", err);
       setStatus("ready");
       setErrorMessage("Failed to generate response. Please try again.");
       return {
-        corrected: "",
+        valid: false,
+        corrected: null,
+        feedback: null,
         reply: "Something went wrong. Please try again.",
+        emotion: "confused",
       };
     }
   }
