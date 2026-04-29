@@ -8,25 +8,36 @@ import squirrel5 from '@/assets/focused.png';
 import squirrel6 from '@/assets/surprised.png';
 import { getSignRecognition } from '@/lib/signRecognition';
 
-const squirrelImages = [squirrel1, squirrel2, squirrel3, squirrel4, squirrel5, squirrel6];
+const emotionToImage: Record<string, string> = {
+  cheerful: squirrel1,
+  confused: squirrel2,
+  embarrassed: squirrel3,
+  encouraged: squirrel4,
+  focused: squirrel5,
+  surprised: squirrel6,
+};
 
-export function VideoCall() {
+interface VideoCallProps {
+  emotion: string;
+}
+
+export function VideoCall({ emotion }: VideoCallProps) {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [cameraError, setCameraError] = useState(false);
   const [recognizedWord, setRecognizedWord] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Set up webcam
+  const currentImage = emotionToImage[emotion] ?? emotionToImage.cheerful;
+
   useEffect(() => {
     const startWebcam = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: true, 
-          audio: false 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
         });
         streamRef.current = stream;
         if (videoRef.current) {
@@ -34,7 +45,7 @@ export function VideoCall() {
         }
         setCameraError(false);
       } catch (error) {
-        console.error('Error accessing webcam:', error);
+        console.error("Error accessing webcam:", error);
         setCameraError(true);
       }
     };
@@ -42,16 +53,15 @@ export function VideoCall() {
     if (isVideoOn) {
       startWebcam();
     } else {
-      // Stop webcam when video is off
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
     }
 
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, [isVideoOn]);
@@ -104,18 +114,8 @@ export function VideoCall() {
     };
   }, [isVideoOn, cameraError]);
 
-  // Rotate squirrel images
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % squirrelImages.length);
-    }, 2000); // Rotate every 2 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Your video - main camera box */}
       <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden relative">
         {isVideoOn && !cameraError ? (
           <>
@@ -137,7 +137,9 @@ export function VideoCall() {
             {cameraError ? (
               <>
                 <p className="text-sm mb-1">Camera access denied</p>
-                <p className="text-xs text-gray-500">Please allow camera access in your browser</p>
+                <p className="text-xs text-gray-500">
+                  Please allow camera access in your browser
+                </p>
               </>
             ) : (
               <p className="text-sm">Camera Off</p>
@@ -154,12 +156,12 @@ export function VideoCall() {
             Sign: {recognizedWord}
           </div>
         )}
-
-        {/* Squirrel video - corner picture-in-picture */}
+        
+        {/* Squirrel — now driven by emotion prop */}
         <div className="absolute bottom-4 right-4 w-48 h-48 bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700 shadow-lg">
           <img
-            src={squirrelImages[currentImageIndex]}
-            alt="Acorn the Squirrel"
+            src={currentImage}
+            alt={`Acorn feeling ${emotion}`}
             className="w-full h-full object-contain bg-white"
           />
           <div className="absolute top-1 left-1 bg-black/60 text-white px-1.5 py-0.5 rounded text-xs">
@@ -168,27 +170,26 @@ export function VideoCall() {
         </div>
       </div>
 
-      {/* Video controls overlay */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
         <button
           onClick={() => setIsMicOn(!isMicOn)}
           className={`p-2 rounded-full transition-colors ${
-            isMicOn 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-              : 'bg-red-600 hover:bg-red-700 text-white'
+            isMicOn
+              ? "bg-gray-700 hover:bg-gray-600 text-white"
+              : "bg-red-600 hover:bg-red-700 text-white"
           }`}
-          aria-label={isMicOn ? 'Mute microphone' : 'Unmute microphone'}
+          aria-label={isMicOn ? "Mute microphone" : "Unmute microphone"}
         >
           {isMicOn ? <Mic size={16} /> : <MicOff size={16} />}
         </button>
         <button
           onClick={() => setIsVideoOn(!isVideoOn)}
           className={`p-2 rounded-full transition-colors ${
-            isVideoOn 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-              : 'bg-red-600 hover:bg-red-700 text-white'
+            isVideoOn
+              ? "bg-gray-700 hover:bg-gray-600 text-white"
+              : "bg-red-600 hover:bg-red-700 text-white"
           }`}
-          aria-label={isVideoOn ? 'Turn off camera' : 'Turn on camera'}
+          aria-label={isVideoOn ? "Turn off camera" : "Turn on camera"}
         >
           {isVideoOn ? <Video size={16} /> : <VideoOff size={16} />}
         </button>
