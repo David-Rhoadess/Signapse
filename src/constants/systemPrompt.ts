@@ -1,40 +1,65 @@
 // ─── PIPELINE 1: FLAG ───────────────────────────────────────────────────────
 // Input: ASL gloss
 // Output: list of flagged wrong words/tokens, or valid
+export const flagPrompt = (tokenList: string, tokenCount: number) => `You are an ASL gloss error detector. Every uppercase token is an ASL sign.
 
-export const flagPrompt = `You are an ASL gloss error detector.
+Rules:
+  R1. WH-sign (WHAT, WHERE, WHO, WHY, WHEN, HOW) not at end of sentence → FLAG
+  R2. Adjective placed before its noun → FLAG
+  R3. A simpler, more common sign exists → FLAG
+      Known substitutions: DISEASE→SICK, VEHICLE→CAR, OBSERVE→WATCH, CONSUME→EAT, RESIDENCE→HOME
+      Only flag when confident. When unsure → do NOT flag.
 
-Given ASL gloss input, identify tokens that violate these rules:
-1. Dash-spelled sequence that is NOT a real word, name, or acronym.
-2. English words that do not exist in ASL: IS, ARE, AM, WAS, WERE, I
-3. Non-ASL vocabulary that has a better ASL equivalent.
-4. WH-sign (WHAT, WHERE, WHO, WHY, WHEN, HOW) not at the end of the sentence.
-5. Adjective used before its noun.
+Never flag: WANT, LIKE, GO, TALK, HELP, LEARN, NAME, proper names, places, acronyms.
 
-Never flag proper names, places or acronym. When unsure, do not flag.
+Tokens to check (${tokenCount} total):
+${tokenList}
 
-Respond only with raw JSON:
-If no errors found, respond with
-{
-  "valid": true,
-  "flagged": []
-}
+For each token in the list above — no more, no fewer — write exactly:
 
-Else, set valid to false and list each flagged token:
-{
-  "valid": false,
-  "flagged": ["WORD1", "WORD2"]
-}`;
+TOKEN: <word>
+  R1 CHECK: <is it a WH-sign not at the end? yes/no — why>
+  R2 CHECK: <is it an adjective before a noun? yes/no — why>
+  R3 CHECK: <does a simpler sign exist? yes/no — why>
+VERDICT: OK | FLAG (<reason>)
+
+After all ${tokenCount} tokens are checked, write END, then output the JSON.
+
+Example (3 tokens: ME, FEEL, HAPPINESS):
+
+TOKEN: ME
+  R1 CHECK: not a WH-sign → no
+  R2 CHECK: not an adjective → no
+  R3 CHECK: no simpler sign for ME → no
+VERDICT: OK
+
+TOKEN: FEEL
+  R1 CHECK: not a WH-sign → no
+  R2 CHECK: not an adjective → no
+  R3 CHECK: no simpler sign for FEEL → no
+VERDICT: OK
+
+TOKEN: HAPPINESS
+  R1 CHECK: not a WH-sign → no
+  R2 CHECK: not an adjective → no
+  R3 CHECK: simpler sign exists: HAPPY → yes
+VERDICT: FLAG (use HAPPY instead of HAPPINESS)
+
+END
+{ "valid": false, "flagged": ["HAPPINESS"] }`;
 
 
 // ─── PIPELINE 2: REASON ─────────────────────────────────────────────────────
 // Input: ASL Input and flagged words
 // Output: per-word reason why it is wrong in ASL context
 
-export const reasonPrompt = `You are an ASL grammar explainer.
+export const reasonPrompt = (gloss: string, flagged: string[]) =>
+  `You are an ASL grammar explainer.
 
-You will receive a full ASL gloss sentence and a list of flagged words that are incorrect.
-For each flagged word, give a short simple reason why it does not belong in given ASL gloss, considering the context of the full sentence.
+Full ASL gloss: "${gloss}"
+Flagged words: ${flagged.map(w => `"${w}"`).join(", ")}
+
+For each flagged word, give a short simple reason why it does not belong in the given ASL gloss, considering the context of the full sentence.
 
 Respond only with raw JSON, one entry per flagged word:
 {
@@ -49,9 +74,13 @@ Respond only with raw JSON, one entry per flagged word:
 // Input: full sentence, flagged words and reasons
 // Output: suggested replacement for each wrong word (or null if should be removed)
 
-export const correctPrompt = `You are an ASL gloss corrector.
+export const correctPrompt = (gloss: string, reasons: { word: string; reason: string }[]) =>
+  `You are an ASL gloss corrector.
 
-You will receive a full ASL gloss sentence, a list of wrong words, and the reason each is wrong.
+Full ASL gloss: "${gloss}"
+Wrong words and reasons:
+${reasons.map(r => `- "${r.word}": ${r.reason}`).join("\n")}
+
 For each wrong word, suggest the best ASL replacement token, or null if the word should be deleted entirely.
 
 Rules:

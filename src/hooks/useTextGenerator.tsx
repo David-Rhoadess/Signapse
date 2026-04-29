@@ -103,8 +103,9 @@ export function useTextGenerator() {
 
   function parseJSON<T>(raw: string, fallback: T): T {
     try {
-      const cleaned = raw.replace(/```json|```/g, "").trim();
-      return JSON.parse(cleaned);
+      const match = raw.match(/\{[\s\S]*\}(?=[^}]*$)/);
+      if (!match) throw new Error("No JSON found");
+      return JSON.parse(match[0]);
     } catch {
       console.warn("Failed to parse JSON:", raw);
       return fallback;
@@ -137,7 +138,13 @@ export function useTextGenerator() {
 
     try {
       // ── Pipeline 1: Flag ──────────────────────────────────────────
-      const rawFlag = await runPipeline(flagPrompt, rawInput, [], 128);
+      const tokens = rawInput.trim().split(/\s+/);
+      const tokenList = tokens.map((t, i) => `  ${i + 1}. ${t}`).join("\n");
+      const tokenCount = tokens.length;
+      const realFlagPrompt = flagPrompt(tokenList, tokenCount);
+      console.log("flag prompt:", realFlagPrompt);
+
+      const rawFlag = await runPipeline(realFlagPrompt, rawInput, [], 512);
       console.log("Pipeline 1 raw:", rawFlag);
 
       const flagResult = parseJSON<FlagResult>(rawFlag, { valid: true, flagged: [] });
@@ -175,16 +182,24 @@ export function useTextGenerator() {
       }
 
       // ── Pipeline 2: Reason ────────────────────────────────────────
-      const p2Input = JSON.stringify({ sentence: rawInput, flagged: flagResult.flagged });
-      const rawReason = await runPipeline(reasonPrompt, p2Input, [], 256);
+      const rawReason = await runPipeline(
+        reasonPrompt(rawInput, flagResult.flagged),
+        "",
+        [],
+        256,
+      );
       console.log("Pipeline 2 raw:", rawReason);
 
       const reasonResult = parseJSON<ReasonResult>(rawReason, { reasons: [] });
       console.log("Pipeline 2 parsed:", reasonResult);
 
       // ── Pipeline 3: Correct ───────────────────────────────────────
-      const p3Input = JSON.stringify({ sentence: rawInput, errors: reasonResult.reasons });
-      const rawCorrect = await runPipeline(correctPrompt, p3Input, [], 256);
+      const rawCorrect = await runPipeline(
+        correctPrompt(rawInput, reasonResult.reasons),
+        "",
+        [],
+        256,
+      );
       console.log("Pipeline 3 raw:", rawCorrect);
 
       const correctResult = parseJSON<CorrectResult>(rawCorrect, { corrections: [] });
@@ -207,13 +222,19 @@ export function useTextGenerator() {
         ...corrections.map((c) => `- "${c.word}": ${c.reason}`),
       ].join("\n");
 
-      const rawReply = await runPipeline(responsePrompt, p4Input, [], 256);
+      const rawReply = await runPipeline(responsePrompt, p4Input, conversationHistory.current, 512);
       console.log("Pipeline 4 raw:", rawReply);
 
       const replyResult = parseJSON<{ emotion: string; reply: string }>(
         rawReply,
         { emotion: "embarrassed", reply: rawReply },
       );
+
+      conversationHistory.current = [
+        ...conversationHistory.current,
+        { role: "user", content: rawInput },
+        { role: "assistant", content: replyResult.reply },
+      ];
 
       setStatus("ready");
       return {
