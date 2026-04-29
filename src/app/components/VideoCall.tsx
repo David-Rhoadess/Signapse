@@ -6,6 +6,7 @@ import squirrel3 from '@/assets/embarrassed.png';
 import squirrel4 from '@/assets/encouraged.png';
 import squirrel5 from '@/assets/focused.png';
 import squirrel6 from '@/assets/surprised.png';
+import { getSignRecognition } from '@/lib/signRecognition';
 
 const squirrelImages = [squirrel1, squirrel2, squirrel3, squirrel4, squirrel5, squirrel6];
 
@@ -14,7 +15,9 @@ export function VideoCall() {
   const [isMicOn, setIsMicOn] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [cameraError, setCameraError] = useState(false);
+  const [recognizedWord, setRecognizedWord] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Set up webcam
@@ -53,6 +56,54 @@ export function VideoCall() {
     };
   }, [isVideoOn]);
 
+  // Attach the sign-recognition service once the webcam stream is playing.
+  // The service is a singleton, so re-attaches after toggling video off/on are no-ops.
+  useEffect(() => {
+    if (!isVideoOn || cameraError) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+
+    const attachWhenReady = async () => {
+      try {
+        const service = await getSignRecognition();
+        if (cancelled) return;
+
+        unsubscribe = service.subscribe(({ word, distance }) => {
+          console.log('recognized:', word, 'distance:', distance);
+          setRecognizedWord(word);
+        });
+
+        const start = () => {
+          if (cancelled) return;
+          // Match the canvas pixel size to the video so landmark drawing aligns.
+          canvas.width = video.videoWidth || canvas.clientWidth;
+          canvas.height = video.videoHeight || canvas.clientHeight;
+          service.attach(video, canvas);
+        };
+
+        if (video.readyState >= 1 && video.videoWidth > 0) {
+          start();
+        } else {
+          video.addEventListener('loadedmetadata', start, { once: true });
+        }
+      } catch (err) {
+        console.error('Failed to start sign recognition:', err);
+      }
+    };
+
+    attachWhenReady();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [isVideoOn, cameraError]);
+
   // Rotate squirrel images
   useEffect(() => {
     const interval = setInterval(() => {
@@ -67,13 +118,20 @@ export function VideoCall() {
       {/* Your video - main camera box */}
       <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden relative">
         {isVideoOn && !cameraError ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover scale-x-[-1]"
-          />
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover scale-x-[-1]"
+            />
+            {/* Landmark overlay — mirrored to match the mirrored video preview. */}
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full pointer-events-none scale-x-[-1]"
+            />
+          </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
             {cameraError ? (
@@ -89,6 +147,13 @@ export function VideoCall() {
         <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 rounded text-xs">
           You
         </div>
+
+        {/* Most recently recognized sign */}
+        {recognizedWord && isVideoOn && !cameraError && (
+          <div className="absolute top-2 right-2 bg-blue-600/80 text-white px-2 py-0.5 rounded text-xs">
+            Sign: {recognizedWord}
+          </div>
+        )}
 
         {/* Squirrel video - corner picture-in-picture */}
         <div className="absolute bottom-4 right-4 w-48 h-48 bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700 shadow-lg">
