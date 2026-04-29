@@ -1,1 +1,10 @@
 node_modules
+
+.DS_Store
+.idea/
+
+# Sign-recognition runtime assets — copied from node_modules by `npm install`
+# (see scripts/copy-runtime-assets.mjs). Don't commit; they're large and
+# regenerated from the installed packages.
+public/wasm/
+public/tasks/
