@@ -6,10 +6,7 @@ import { Button } from "./ui/button";
 
 export function Home() {
   const [callEnded, setCallEnded] = useState(false);
-
-  const handleEndCall = () => {
-    setCallEnded(true);
-  };
+  const [emotion, setEmotion] = useState<string>("cheerful");
 
   if (callEnded) {
     return (
@@ -30,23 +27,17 @@ export function Home() {
 
   return (
     <div className="size-full flex flex-col bg-gray-100 p-2 gap-2">
-      {/* Main content area */}
       <div className="flex-1 flex gap-2 min-h-0">
-        {/* Video call area */}
         <div className="flex-1 min-w-0">
-          <VideoCall />
+          <VideoCall emotion={emotion} />
         </div>
-
-        {/* Chatbot sidebar */}
         <div className="w-80 flex-shrink-0">
-          <Chatbot />
+          <Chatbot onEmotionChange={setEmotion} />
         </div>
       </div>
-
-      {/* End call button */}
       <div className="flex justify-center">
         <Button
-          onClick={handleEndCall}
+          onClick={() => setCallEnded(true)}
           size="sm"
           className="bg-red-600 hover:bg-red-700 text-white px-6"
         >

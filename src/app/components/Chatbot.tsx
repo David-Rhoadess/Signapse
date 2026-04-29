@@ -12,6 +12,10 @@ interface Message {
   timestamp: Date;
 }
 
+interface ChatbotProps {
+  onEmotionChange: (emotion: string) => void;
+}
+
 const initMessage: Message = {
   id: "1",
   text: "Hi! I am Acorn, your ASL practice partner. Let's start easy! Can you sign HELLO?",
@@ -19,7 +23,7 @@ const initMessage: Message = {
   timestamp: new Date(),
 };
 
-export function Chatbot() {
+export function Chatbot({ onEmotionChange }: ChatbotProps) {
   const [messages, setMessages] = useState<Message[]>([initMessage]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -42,9 +46,13 @@ export function Chatbot() {
   
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-  
+
     const { valid, corrected, corrections, reply, emotion } = await generate(input);
-  
+
+    // Update squirrel emotion in VideoCall via Home
+    onEmotionChange(emotion);
+
+    // Always show Acorn's reply
     setMessages((prev) => [
       ...prev,
       // Acorn's reply
