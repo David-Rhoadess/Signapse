@@ -14,7 +14,7 @@ interface Message {
 
 const initMessage: Message = {
   id: "1",
-  text: "Hi! I am Acorn, your ASL practice partner. So glad you are here. Let's start easy. Can you say hello to me?",
+  text: "Hi! I am Acorn, your ASL practice partner. Let's start easy! Can you sign HELLO?",
   sender: "system",
   timestamp: new Date(),
 };
@@ -32,32 +32,38 @@ export function Chatbot() {
 
   const handleSend = async () => {
     if (!input.trim() || status !== "ready") return;
-
+  
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
       sender: "user",
       timestamp: new Date(),
     };
-
+  
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-
-    const { valid, corrected, feedback, reply, emotion } =
-      await generate(input);
-
-    // Always show Acorn's reply
+  
+    const { valid, corrected, corrections, reply, emotion } = await generate(input);
+  
     setMessages((prev) => [
       ...prev,
+      // Acorn's reply
       {
         id: (Date.now() + 1).toString(),
         text: reply,
         sender: "system" as const,
         timestamp: new Date(),
       },
+      // If invalid, show the corrected gloss as a second bubble
+      ...(!valid && corrected
+        ? [{
+            id: (Date.now() + 2).toString(),
+            text: `Corrected: ${corrected}`,
+            sender: "system" as const,
+            timestamp: new Date(),
+          }]
+        : []),
     ]);
-
-    // TODO: use emotion to update emoji
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
