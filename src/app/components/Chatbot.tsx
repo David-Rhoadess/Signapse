@@ -45,16 +45,6 @@ export function Chatbot() {
 
     const { valid, corrected, feedback, reply, emotion } =
       await generate(input);
-    console.log(
-      "Valid:",
-      valid,
-      "| Corrected:",
-      corrected,
-      "| Feedback:",
-      feedback,
-      "| Emotion:",
-      emotion,
-    );
 
     // Always show Acorn's reply
     setMessages((prev) => [

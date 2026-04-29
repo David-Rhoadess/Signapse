@@ -150,8 +150,8 @@ export function useTextGenerator() {
 
       // Pipeline 2 — build input based on validation result
       const pipeline2Input = correctionResult.valid
-        ? rawInput // valid: respond to original input
-        : `Original: "${rawInput}"\nCorrected: "${correctionResult.corrected}"\nReason: ${correctionResult.feedback}`;
+        ? `The user signed: "${rawInput}"`
+        : `The user attempted: "${rawInput}"\nThe correct ASL gloss is: "${correctionResult.corrected}"\nWhat was wrong: ${correctionResult.feedback}\n\nExplain this error to the user warmly and show them the correct gloss.`;
 
       const rawReply = await runPipeline(
         responsePrompt,
