@@ -1,116 +1,153 @@
-import { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
+import { useState, useRef, useEffect } from "react";
+import { Send } from "lucide-react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { ScrollArea } from "./ui/scroll-area";
+import { useTextGenerator } from "../../hooks/useTextGenerator";
 
 interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'bot';
+  sender: "user" | "system";
   timestamp: Date;
 }
 
-const botResponses = [
-  "That's interesting! Tell me more.",
-  "I'm here to help! What would you like to know?",
-  "Great question! As a squirrel mascot's assistant, I'm here to make your day better!",
-  "Nutty says hello! 🐿️",
-  "I love chatting with you!",
-  "That's a wonderful point!",
-  "How can I assist you today?",
-];
+const initMessage: Message = {
+  id: "1",
+  text: "Hello! I am Acorn, your ASL practice partner. So glad you are here. Let us start easy. Can you say hello to me?",
+  sender: "system",
+  timestamp: new Date(),
+};
 
 export function Chatbot() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Hi! My name is Acorn, how can I help today?",
-      sender: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<Message[]>([initMessage]);
+  const [input, setInput] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { status, errorMessage, generate, resetHistory } = useTextGenerator();
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, status]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || status !== "ready") return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
-      sender: 'user',
+      sender: "user",
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
+    setInput("");
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botResponses[Math.floor(Math.random() * botResponses.length)],
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-    }, 500);
+    const reply = await generate(input);
+
+    const systemMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: reply,
+      sender: "system",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, systemMessage]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
+  function handleClear() {
+    setMessages([initMessage]);
+    resetHistory();
+  }
+
   return (
-    <div className="h-full flex flex-col bg-white rounded-lg shadow-lg">
+    <div className="h-full flex flex-col bg-white rounded-lg shadow-lg min-h-0">
       {/* Chat header */}
-      <div className="p-2 border-b">
+
+      <div className="p-2 border-b flex items-center justify-between">
         <h2 className="text-sm font-semibold">Chat with Assistant</h2>
+        <button
+          onClick={handleClear}
+          disabled={status !== "ready"}
+          className="text-xs text-gray-500 hover:text-blue-500 disabled:opacity-40 transition-colors"
+        >
+          New Chat
+        </button>
       </div>
 
+      {/* Model status banners */}
+      {status === "loading" && (
+        <div className="px-2 py-1 text-xs text-center bg-yellow-50 text-yellow-700 border-b">
+          Loading AI model, please wait...
+        </div>
+      )}
+      {status === "error" && (
+        <div className="px-2 py-1 text-xs text-center bg-red-50 text-red-700 border-b">
+          {errorMessage}
+        </div>
+      )}
       {/* Messages area */}
-      <ScrollArea className="flex-1 p-2">
-        <div ref={scrollRef} className="space-y-2">
+      <ScrollArea className="flex-1 p-2 min-h-0 overflow-y-auto">
+        <div className="space-y-2">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-[85%] rounded-lg px-2 py-1 ${
-                  message.sender === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-900'
+                  message.sender === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-900"
                 }`}
               >
                 <p className="text-xs">{message.text}</p>
               </div>
             </div>
           ))}
+          {/* Thinking indicator */}
+          {status === "generating" && (
+            <div className="flex justify-start">
+              <div className="bg-gray-200 text-gray-900 rounded-lg px-2 py-1">
+                <p className="text-xs">Thinking...</p>
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} /> {/* 👈 auto-scroll target */}
         </div>
       </ScrollArea>
 
-      {/* Input area */}
+      {/* Input area — unchanged except disabled states */}
       <div className="p-2 border-t">
         <div className="flex gap-1">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
+            placeholder={
+              status === "loading"
+                ? "Loading model..."
+                : status === "generating"
+                  ? "Acorn is thinking..."
+                  : status === "error"
+                    ? "Unavailable"
+                    : "Type a message..."
+            }
+            disabled={status !== "ready"}
             className="flex-1 h-8 text-sm"
           />
-          <Button onClick={handleSend} size="sm" className="h-8 w-8 p-0">
+          <Button
+            onClick={handleSend}
+            size="sm"
+            className="h-8 w-8 p-0"
+            disabled={status !== "ready" || !input.trim()}
+          >
             <Send size={14} />
           </Button>
         </div>

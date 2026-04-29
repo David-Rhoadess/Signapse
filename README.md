@@ -1,10 +1,7 @@
+# Signapse
 
-  # Signapse
+## Running the code
 
-  ## Running the code
+Run `npm i` to install the dependencies.
 
-  Run `npm i` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
-  
-hello world!
+Run `npm run dev` to start the development server.
