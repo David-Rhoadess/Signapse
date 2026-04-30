@@ -64,7 +64,7 @@
     "react-router": "7.13.0",
     "react-slick": "0.31.0",
     "recharts": "2.15.2",
-    "sign-language-recognition": "github:eoyoa/Sign-Language-Recognition",
+    "sign-language-recognition": "github:AcornSL/Sign-Language-Recognition",
     "sonner": "2.0.3",
     "tailwind-merge": "3.2.0",
     "tw-animate-css": "1.3.8",
