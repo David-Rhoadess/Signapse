@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  AutoProcessor,
-  Qwen3_5ForConditionalGeneration,
-} from "@huggingface/transformers";
+import {AutoModelForCausalLM, AutoTokenizer} from "@huggingface/transformers";
 import { flagPrompt, reasonPrompt, correctPrompt, responsePrompt } from "../constants/systemPrompt";
 
 type Status = "idle" | "loading" | "ready" | "generating" | "error";
@@ -48,9 +45,9 @@ export function useTextGenerator() {
       setErrorMessage(null);
 
       try {
-        const model_id = "onnx-community/Qwen3.5-0.8B-ONNX";
-        processorRef.current = await AutoProcessor.from_pretrained(model_id);
-        modelRef.current = await Qwen3_5ForConditionalGeneration.from_pretrained(model_id, {
+        const model_id = "onnx-community/Qwen3.5-2B-ONNX";
+        processorRef.current = await AutoTokenizer.from_pretrained(model_id);
+        modelRef.current = await AutoModelForCausalLM.from_pretrained(model_id, {
           dtype: {
             embed_tokens: device === "webgpu" ? "q4f16" : "q8",
             decoder_model_merged: device === "webgpu" ? "q4f16" : "q8",
@@ -82,14 +79,21 @@ export function useTextGenerator() {
 
     const text = processorRef.current.apply_chat_template(messages, {
       add_generation_prompt: true,
+      tokenize: false,
     });
 
-    const inputs = await processorRef.current(text);
+    const inputs = await processorRef.current(text, {
+      return_tensors: "pt",
+    });
 
     const outputIds = await modelRef.current.generate({
       ...inputs,
       max_new_tokens: maxTokens,
       do_sample: false,
+      temperature: 1.0,
+      top_p: 1.0,
+      top_k: 20,
+      repetition_penalty: 1.0,
     });
 
     const newTokens = outputIds.slice(null, [inputs.input_ids.dims.at(-1), null]);

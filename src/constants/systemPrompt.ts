@@ -19,7 +19,7 @@ For each token in the list above — no more, no fewer — write exactly:
 
 TOKEN: <word>
   R1 CHECK: <is it a WH-sign not at the end? yes/no — why>
-  R2 CHECK: <is it an adjective before a noun? yes/no — why>
+  R2 CHECK: <is it an adjective? yes/no — why>
   R3 CHECK: <does a simpler sign exist? yes/no — why>
 VERDICT: OK | FLAG (<reason>)
 
