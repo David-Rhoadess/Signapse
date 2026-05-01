@@ -19,12 +19,17 @@ const initMessage: Message = {
   timestamp: new Date(),
 };
 
+function formatMB(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(1);
+}
+
 export function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([initMessage]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { status, errorMessage, generate, resetHistory } = useTextGenerator();
+  const { status, errorMessage, progress, generate, resetHistory } =
+    useTextGenerator();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -83,8 +88,28 @@ export function Chatbot() {
 
       {/* Model status banners */}
       {status === "loading" && (
-        <div className="px-2 py-1 text-xs text-center bg-yellow-50 text-yellow-700 border-b">
-          Loading AI model, please wait...
+        <div className="px-2 py-1 bg-yellow-50 text-yellow-700 border-b">
+          <div className="flex items-center justify-between text-xs">
+            <span>
+              Loading Acorn
+              {progress && progress.total > 0
+                ? `… ${progress.percent.toFixed(0)}%`
+                : "…"}
+            </span>
+            {progress && progress.total > 0 && (
+              <span className="tabular-nums">
+                {formatMB(progress.loaded)} / {formatMB(progress.total)} MB
+              </span>
+            )}
+          </div>
+          {progress && progress.total > 0 && (
+            <div className="mt-1 h-1 w-full rounded bg-yellow-100 overflow-hidden">
+              <div
+                className="h-full bg-yellow-500 transition-[width] duration-150"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
       {status === "error" && (

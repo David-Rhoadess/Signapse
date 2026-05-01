@@ -12,6 +12,13 @@ interface ChatMessage {
   content: string;
 }
 
+export interface ModelLoadProgress {
+  loaded: number; // bytes downloaded so far across all files
+  total: number; // expected total bytes; 0 until the first progress event
+  percent: number; // 0-100
+  currentFile: string | null;
+}
+
 export function useTextGenerator() {
   const modelRef = useRef<any>(null);
   const processorRef = useRef<any>(null);
@@ -19,18 +26,66 @@ export function useTextGenerator() {
 
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ModelLoadProgress | null>(null);
 
   useEffect(() => {
+    // The model loads as several shards in parallel; HuggingFace fires a
+    // progress event per shard. Track each shard's bytes here and sum them
+    // for a single overall percentage. Throttle React updates so we don't
+    // re-render hundreds of times per second during the download.
+    const fileProgress = new Map<string, { loaded: number; total: number }>();
+    let lastFlush = 0;
+
+    function flush(currentFile: string | null, force = false) {
+      const now = performance.now();
+      if (!force && now - lastFlush < 100) return;
+      lastFlush = now;
+
+      let loaded = 0;
+      let total = 0;
+      for (const v of fileProgress.values()) {
+        loaded += v.loaded;
+        total += v.total;
+      }
+      const percent = total > 0 ? Math.min(100, (loaded / total) * 100) : 0;
+      setProgress({ loaded, total, percent, currentFile });
+    }
+
+    function progressCallback(info: any) {
+      if (info?.status === "progress" && typeof info.loaded === "number") {
+        fileProgress.set(info.file, {
+          loaded: info.loaded,
+          total:
+            typeof info.total === "number" && info.total > 0
+              ? info.total
+              : info.loaded,
+        });
+        flush(info.file);
+      } else if (info?.status === "done" && info?.file) {
+        const existing = fileProgress.get(info.file);
+        if (existing) {
+          fileProgress.set(info.file, {
+            loaded: existing.total,
+            total: existing.total,
+          });
+        }
+        flush(info.file, true);
+      }
+    }
+
     async function loadModel() {
       const device = navigator.gpu ? "webgpu" : "wasm";
 
       setStatus("loading");
       setErrorMessage(null);
+      setProgress(null);
 
       try {
         const model_id = "onnx-community/Qwen3.5-0.8B-ONNX";
 
-        processorRef.current = await AutoProcessor.from_pretrained(model_id);
+        processorRef.current = await AutoProcessor.from_pretrained(model_id, {
+          progress_callback: progressCallback,
+        } as any);
 
         modelRef.current =
           await Qwen3_5ForConditionalGeneration.from_pretrained(model_id, {
@@ -39,8 +94,10 @@ export function useTextGenerator() {
               decoder_model_merged: device === "webgpu" ? "q4f16" : "q8",
             },
             device,
-          });
+            progress_callback: progressCallback,
+          } as any);
 
+        flush(null, true);
         setStatus("ready");
       } catch (err) {
         console.error("Model load error:", err);
@@ -122,5 +179,5 @@ export function useTextGenerator() {
     setStatus("ready");
   }
 
-  return { status, errorMessage, generate, resetHistory };
+  return { status, errorMessage, progress, generate, resetHistory };
 }
