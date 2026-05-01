@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router';
+import { Outlet, Link, useLocation } from "react-router";
 
 export function Root() {
   const location = useLocation();
@@ -7,14 +7,14 @@ export function Root() {
     <div className="size-full flex flex-col">
       {/* Header */}
       <header className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Signapse</h1>
+        <h1 className="text-xl font-bold">AcornSL</h1>
         <nav className="flex gap-4">
           <Link
             to="/"
             className={`text-sm px-3 py-1 rounded border ${
-              location.pathname === '/'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-500'
+              location.pathname === "/"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-500"
             }`}
           >
             Video Call 🎥
@@ -22,9 +22,9 @@ export function Root() {
           <Link
             to="/chat-log"
             className={`text-sm px-3 py-1 rounded border ${
-              location.pathname === '/chat-log'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-500'
+              location.pathname === "/chat-log"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-500"
             }`}
           >
             Chat Log 💬
