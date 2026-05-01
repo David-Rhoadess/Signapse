@@ -22,7 +22,7 @@ interface ChatSession {
 const mockChatSessions: ChatSession[] = [
   {
     id: '1',
-    date: 'April 9, 2026',
+    date: 'April 19, 2026',
     duration: '15 minutes',
     summary: {
       learned: [
@@ -50,7 +50,7 @@ const mockChatSessions: ChatSession[] = [
   },
   {
     id: '2',
-    date: 'April 8, 2026',
+    date: 'April 25, 2026',
     duration: '8 minutes',
     summary: {
       learned: [
@@ -76,7 +76,7 @@ const mockChatSessions: ChatSession[] = [
   },
   {
     id: '3',
-    date: 'April 7, 2026',
+    date: 'April 21, 2026',
     duration: '22 minutes',
     summary: {
       learned: [
