@@ -15,6 +15,10 @@ export interface ModelLoadProgress {
   percent: number; // 0-100
   currentFile: string | null;
 }
+export interface GenerateResult {
+  reply: string; // Acorn's response
+  emotion: string; // one of the 6 emotions
+}
 
 export function useTextGenerator() {
   const modelRef = useRef<any>(null);
@@ -108,13 +112,23 @@ export function useTextGenerator() {
     loadModel();
   }, []);
 
-  async function generate(prompt: string): Promise<string> {
+  function parseJSON<T>(raw: string, fallback: T): T {
+    try {
+      const cleaned = raw.replace(/```json|```/g, "").trim();
+      return JSON.parse(cleaned);
+    } catch {
+      console.warn("Failed to parse JSON:", raw);
+      return fallback;
+    }
+  }
+
+  async function generate(prompt: string): Promise<GenerateResult> {
     if (!modelRef.current || !processorRef.current) {
-      return "Model is not ready yet.";
+      return { reply: "Model is not ready yet.", emotion: "confused" };
     }
 
     if (status !== "ready") {
-      return "Model is still loading.";
+      return { reply: "Model is still loading.", emotion: "confused" };
     }
 
     setStatus("generating");
@@ -126,6 +140,7 @@ export function useTextGenerator() {
     };
 
     try {
+      console.log("start generating response");
       const messages = [
         { role: "system", content: systemPrompt },
         ...conversationHistory.current,
@@ -135,6 +150,7 @@ export function useTextGenerator() {
       const text = processorRef.current.apply_chat_template(messages, {
         add_generation_prompt: true,
         tokenize: false,
+        enable_thinking: false,
       });
 
       const inputs = await processorRef.current(text, {
@@ -156,24 +172,35 @@ export function useTextGenerator() {
         null,
       ]);
 
-      const reply =
+      const rawReply =
         processorRef.current.batch_decode(newTokens, {
           skip_special_tokens: true,
         })[0] ?? "No response generated.";
 
+      console.log("Raw reply" + rawReply);
+
+      const replyResult = parseJSON<{ emotion: string; reply: string }>(
+        rawReply,
+        { emotion: "confused", reply: rawReply },
+      );
+      console.log("LLM response:", replyResult);
+
       conversationHistory.current = [
         ...conversationHistory.current,
         newMessage,
-        { role: "assistant", content: reply },
+        { role: "assistant", content: replyResult.reply },
       ];
 
       setStatus("ready");
-      return reply;
+      return replyResult;
     } catch (err) {
       console.error("Generation error:", err);
       setStatus("ready"); // allow retry
       setErrorMessage("Failed to generate response. Please try again.");
-      return "Something went wrong. Please try again.";
+      return {
+        reply: "Something went wrong. Please try again.",
+        emotion: "confused",
+      };
     }
   }
 

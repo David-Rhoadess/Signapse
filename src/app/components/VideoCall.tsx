@@ -1,4 +1,3 @@
-import { Video, VideoOff } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import squirrel1 from "@/assets/cheerful.png";
 import squirrel2 from "@/assets/confused.png";
@@ -8,26 +7,28 @@ import squirrel5 from "@/assets/focused.png";
 import squirrel6 from "@/assets/surprised.png";
 import { getSignRecognition } from "@/lib/signRecognition";
 
-const squirrelImages = [
-  squirrel1,
-  squirrel2,
-  squirrel3,
-  squirrel4,
-  squirrel5,
-  squirrel6,
-];
+const emotionToImage: Record<string, string> = {
+  cheerful: squirrel1,
+  confused: squirrel2,
+  embarrassed: squirrel3,
+  encouraged: squirrel4,
+  focused: squirrel5,
+  surprised: squirrel6,
+};
 
 interface VideoCallProps {
+  emotion: string;
   isVideoOn: boolean;
 }
 
-export function VideoCall({ isVideoOn }: VideoCallProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+export function VideoCall({ emotion, isVideoOn }: VideoCallProps) {
   const [cameraError, setCameraError] = useState(false);
   const [recognizedWord, setRecognizedWord] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const currentImage = emotionToImage[emotion] ?? emotionToImage.cheerful;
 
   // Set up webcam
   useEffect(() => {
@@ -109,16 +110,6 @@ export function VideoCall({ isVideoOn }: VideoCallProps) {
     };
   }, [isVideoOn, cameraError]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex(
-        (prevIndex) => (prevIndex + 1) % squirrelImages.length,
-      );
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="relative w-full h-full flex flex-col">
       <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden relative">
@@ -162,8 +153,8 @@ export function VideoCall({ isVideoOn }: VideoCallProps) {
 
         <div className="absolute bottom-4 right-4 w-48 h-48 bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700 shadow-lg">
           <img
-            src={squirrelImages[currentImageIndex]}
-            alt="Acorn the Squirrel"
+            src={currentImage}
+            alt={`Acorn feeling ${emotion}`}
             className="w-full h-full object-contain bg-white"
           />
           <div className="absolute top-1 left-1 bg-black/60 text-white px-1.5 py-0.5 rounded text-xs">

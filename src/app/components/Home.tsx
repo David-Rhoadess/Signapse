@@ -28,6 +28,8 @@ export function Home() {
     setShowEndCallModal(false);
   };
 
+  const [emotion, setEmotion] = useState<string>("cheerful");
+
   if (callEnded) {
     return (
       <div className="size-full flex items-center justify-center bg-gray-100">
@@ -51,12 +53,12 @@ export function Home() {
       <div className="flex-1 flex gap-2 min-h-0">
         {/* Video call area */}
         <div className="flex-1 min-w-0">
-          <VideoCall isVideoOn={isVideoOn} />
+          <VideoCall emotion={emotion} isVideoOn={isVideoOn} />
         </div>
 
         {/* Chatbot sidebar */}
         <div className="w-80 flex-shrink-0">
-          <Chatbot />
+          <Chatbot onEmotionChange={setEmotion} />
         </div>
       </div>
 
