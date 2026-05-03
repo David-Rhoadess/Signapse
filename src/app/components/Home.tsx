@@ -1,20 +1,48 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PhoneOff, Video, VideoOff } from "lucide-react";
 import { VideoCall } from "./VideoCall";
 import { Chatbot } from "./Chatbot";
 import { Button } from "./ui/button";
+import {
+  saveSession,
+  formatDuration,
+  formatDate,
+  DEFAULT_SUMMARY,
+  type StoredChatMessage,
+} from "../../lib/chatStorage";
 
 export function Home() {
   const [callEnded, setCallEnded] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [showEndCallModal, setShowEndCallModal] = useState(false);
+  const [emotion, setEmotion] = useState<string>("cheerful");
+
+  // Track the chat messages held by <Chatbot> via a callback it calls on every change.
+  const messagesRef = useRef<StoredChatMessage[]>([]);
+  // Track when this session started so we can compute a duration.
+  const sessionStartRef = useRef<Date>(new Date());
+
+  // Reset the start timestamp whenever a new call begins.
+  useEffect(() => {
+    if (!callEnded) {
+      sessionStartRef.current = new Date();
+      messagesRef.current = [];
+    }
+  }, [callEnded]);
 
   const handleEndCallClick = () => {
     setShowEndCallModal(true);
   };
 
   const handleSaveAndEnd = () => {
-    // TODO: implement chat save logic
+    const durationMs = Date.now() - sessionStartRef.current.getTime();
+    saveSession({
+      id: crypto.randomUUID(),
+      date: formatDate(sessionStartRef.current),
+      duration: formatDuration(durationMs),
+      summary: DEFAULT_SUMMARY,
+      messages: messagesRef.current,
+    });
     setShowEndCallModal(false);
     setCallEnded(true);
   };
@@ -27,8 +55,6 @@ export function Home() {
   const handleCancelEnd = () => {
     setShowEndCallModal(false);
   };
-
-  const [emotion, setEmotion] = useState<string>("cheerful");
 
   if (callEnded) {
     return (
@@ -58,7 +84,18 @@ export function Home() {
 
         {/* Chatbot sidebar */}
         <div className="w-80 flex-shrink-0">
-          <Chatbot onEmotionChange={setEmotion} />
+          {/*
+            Chatbot needs two new props:
+              - onEmotionChange: already existed
+              - onMessagesChange: called every time a message is added,
+                receives the full up-to-date StoredChatMessage[] array.
+          */}
+          <Chatbot
+            onEmotionChange={setEmotion}
+            onMessagesChange={(msgs: StoredChatMessage[]) => {
+              messagesRef.current = msgs;
+            }}
+          />
         </div>
       </div>
 
@@ -107,7 +144,7 @@ export function Home() {
                 size="sm"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Save Chat & End Call
+                Save Chat &amp; End Call
               </Button>
               <Button
                 onClick={handleEndWithoutSaving}

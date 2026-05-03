@@ -14,7 +14,20 @@ interface Message {
 
 interface ChatbotProps {
   onEmotionChange: (emotion: string) => void;
+  onMessagesChange?: (
+    messages: { sender: "user" | "bot"; text: string; time: string }[],
+  ) => void;
 }
+
+const toStorageFormat = (msgs: Message[]) =>
+  msgs.map((m) => ({
+    sender: (m.sender === "user" ? "user" : "bot") as "user" | "bot",
+    text: m.text,
+    time: m.timestamp.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  }));
 
 const initMessage: Message = {
   id: "1",
@@ -27,7 +40,7 @@ function formatMB(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1);
 }
 
-export function Chatbot({ onEmotionChange }: ChatbotProps) {
+export function Chatbot({ onEmotionChange, onMessagesChange }: ChatbotProps) {
   const [messages, setMessages] = useState<Message[]>([initMessage]);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -49,7 +62,9 @@ export function Chatbot({ onEmotionChange }: ChatbotProps) {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedUserMessages = [...messages, userMessage];
+    setMessages(updatedUserMessages);
+    onMessagesChange?.(toStorageFormat(updatedUserMessages));
     setInput("");
 
     const { reply, emotion } = await generate(input);
@@ -63,7 +78,9 @@ export function Chatbot({ onEmotionChange }: ChatbotProps) {
       sender: "system",
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, systemMessage]);
+    const updatedAllMessages = [...updatedUserMessages, systemMessage];
+    setMessages(updatedAllMessages);
+    onMessagesChange?.(toStorageFormat(updatedAllMessages));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -75,6 +92,7 @@ export function Chatbot({ onEmotionChange }: ChatbotProps) {
 
   function handleClear() {
     setMessages([initMessage]);
+    onMessagesChange?.(toStorageFormat([initMessage]));
     resetHistory();
   }
 
