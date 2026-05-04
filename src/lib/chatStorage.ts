@@ -56,13 +56,9 @@ export function formatDate(date: Date): string {
 
 export const DEFAULT_SUMMARY = {
   learned: [
-    "WH-question signs go at the end of the sentence with furrowed brows",
     "Follow noun-adjective order, meaning the noun comes before its describing sign",
-    "Similar handshapes like FINE and FIVE are easy to confuse and require careful hand positioning",
   ],
   practice: [
-    "Placing question words at the end of WH-questions",
     "Using noun-adjective order in sentences",
-    "Distinguishing between similar handshapes",
   ],
 };
