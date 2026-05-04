@@ -19,14 +19,26 @@ const emotionToImage: Record<string, string> = {
 interface VideoCallProps {
   emotion: string;
   isVideoOn: boolean;
+  /** Called each time a new sign is confidently recognized. */
+  onSignRecognized?: (word: string) => void;
 }
 
-export function VideoCall({ emotion, isVideoOn }: VideoCallProps) {
+export function VideoCall({
+  emotion,
+  isVideoOn,
+  onSignRecognized,
+}: VideoCallProps) {
   const [cameraError, setCameraError] = useState(false);
   const [recognizedWord, setRecognizedWord] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Keep a stable ref so the subscribe callback always calls the latest prop
+  // without needing to re-subscribe when the parent re-renders.
+  const onSignRecognizedRef = useRef(onSignRecognized);
+  useEffect(() => {
+    onSignRecognizedRef.current = onSignRecognized;
+  });
 
   const currentImage = emotionToImage[emotion] ?? emotionToImage.cheerful;
 
@@ -83,6 +95,8 @@ export function VideoCall({ emotion, isVideoOn }: VideoCallProps) {
         unsubscribe = service.subscribe(({ word, distance }) => {
           console.log("recognized:", word, "distance:", distance);
           setRecognizedWord(word);
+          // Notify the parent so it can route the sign to the chat input.
+          onSignRecognizedRef.current?.(word);
         });
 
         const start = () => {

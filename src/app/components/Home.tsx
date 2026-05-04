@@ -11,24 +11,33 @@ import {
   type StoredChatMessage,
 } from "../../lib/chatStorage";
 
+export interface LatestSign {
+  word: string;
+  /** Monotonically-increasing ID so Chatbot can detect the same word signed twice. */
+  id: number;
+}
+
 export function Home() {
   const [callEnded, setCallEnded] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [showEndCallModal, setShowEndCallModal] = useState(false);
   const [emotion, setEmotion] = useState<string>("cheerful");
+  const [latestSign, setLatestSign] = useState<LatestSign | null>(null);
+  const signIdRef = useRef(0);
 
-  // Track the chat messages held by <Chatbot> via a callback it calls on every change.
   const messagesRef = useRef<StoredChatMessage[]>([]);
-  // Track when this session started so we can compute a duration.
   const sessionStartRef = useRef<Date>(new Date());
 
-  // Reset the start timestamp whenever a new call begins.
   useEffect(() => {
     if (!callEnded) {
       sessionStartRef.current = new Date();
       messagesRef.current = [];
     }
   }, [callEnded]);
+
+  const handleSignRecognized = (word: string) => {
+    setLatestSign({ word, id: ++signIdRef.current });
+  };
 
   const handleEndCallClick = () => {
     setShowEndCallModal(true);
@@ -79,19 +88,18 @@ export function Home() {
       <div className="flex-1 flex gap-2 min-h-0">
         {/* Video call area */}
         <div className="flex-1 min-w-0">
-          <VideoCall emotion={emotion} isVideoOn={isVideoOn} />
+          <VideoCall
+            emotion={emotion}
+            isVideoOn={isVideoOn}
+            onSignRecognized={handleSignRecognized}
+          />
         </div>
 
         {/* Chatbot sidebar */}
         <div className="w-80 flex-shrink-0">
-          {/*
-            Chatbot needs two new props:
-              - onEmotionChange: already existed
-              - onMessagesChange: called every time a message is added,
-                receives the full up-to-date StoredChatMessage[] array.
-          */}
           <Chatbot
             onEmotionChange={setEmotion}
+            latestSign={latestSign}
             onMessagesChange={(msgs: StoredChatMessage[]) => {
               messagesRef.current = msgs;
             }}
