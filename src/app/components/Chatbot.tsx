@@ -38,33 +38,19 @@ const initMessage: Message = {
 };
 
 const HARDCODED_RESPONSES: { emotion: string; reply: string }[] = [
-  { emotion: "cheerful", reply: "Great! What is your name?" },
-  {
-    emotion: "encouraged",
-    reply:
-      "You're almost correct! In ASL, the question word goes at the very end. Try: MY NAME G-R-U YOUR NAME WHAT.",
-  },
+  { emotion: "cheerful", reply: "Fantastic! What is your name?" },
   {
     emotion: "cheerful",
-    reply: "Very nice to meet you, Gru. Do you have any pets?",
+    reply: "Very nice to meet you, Bob. Do you have any pets?",
   },
   {
     emotion: "focused",
     reply:
-      "So close! In ASL, adjectives come after the noun — try DOG BLUE instead. Do you have any pets?",
+      "You are so close! In ASL, adjectives come after the noun. So instead of BLUE DOG, try DOG BLUE. Give it another go! Do you have any pets?",
   },
   {
     emotion: "surprised",
-    reply: "A blue dog! That's so cool. Does your dog have a name?",
-  },
-  {
-    emotion: "cheerful",
-    reply: "Minion is such an interesting name! I love it. How old is Minion?",
-  },
-  {
-    emotion: "confused",
-    reply:
-      "Ha! I'm glad Minion is doing fine, but I think you meant the number 5! Give it another go!",
+    reply: "A blue dog! That's so cool. How old is your dog?",
   },
   {
     emotion: "cheerful",
