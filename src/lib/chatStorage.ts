@@ -56,10 +56,13 @@ export function formatDate(date: Date): string {
 
 export const DEFAULT_SUMMARY = {
   learned: [
-    "How to greet someone with HELLO",
-    "Expressing feelings using ME FEEL followed by an emotion",
-    "Describing daily routines like ME EAT and ME COOK",
-    "Using SELF to mean doing something on your own",
+    "WH-question signs go at the end of the sentence with furrowed brows",
+    "Follow noun-adjective order, meaning the noun comes before its describing sign",
+    "Similar handshapes like FINE and FIVE are easy to confuse and require careful hand positioning",
   ],
-  practice: [] as string[],
+  practice: [
+    "Placing question words at the end of WH-questions",
+    "Using noun-adjective order in sentences",
+    "Distinguishing between similar handshapes",
+  ],
 };
