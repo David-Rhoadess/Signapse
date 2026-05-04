@@ -3,6 +3,7 @@ import { Send, Delete } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
+import { useTextGenerator } from "../../hooks/useTextGenerator";
 import type { LatestSign } from "./Home";
 
 interface Message {
@@ -78,16 +79,30 @@ function thinkingDelay(reply: string): Promise<void> {
   return new Promise((res) => setTimeout(res, ms));
 }
 
+function formatMB(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(1);
+}
+
 export function Chatbot({
   onEmotionChange,
   latestSign,
   onMessagesChange,
 }: ChatbotProps) {
-  const [messages, setMessages] = useState<Message[]>([initMessage]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const turnCount = useRef(0);
+
+  const { status, progress } = useTextGenerator();
+
+  // Show the init message only once the model is ready
+  useEffect(() => {
+    if (status === "ready" && messages.length === 0) {
+      setMessages([initMessage]);
+      onMessagesChange?.(toStorageFormat([initMessage]));
+    }
+  }, [status]);
 
   useEffect(() => {
     if (!latestSign) return;
@@ -102,7 +117,7 @@ export function Chatbot({
   }, [messages, isThinking]);
 
   const handleSend = async () => {
-    if (!input.trim() || isThinking) return;
+    if (!input.trim() || isThinking || status !== "ready") return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -156,6 +171,9 @@ export function Chatbot({
     turnCount.current = 0;
   }
 
+  const isLoading = status === "loading" || status === "idle";
+  const isError = status === "error";
+
   return (
     <div className="h-full flex flex-col bg-white rounded-lg shadow-lg min-h-0">
       {/* Chat header */}
@@ -163,12 +181,44 @@ export function Chatbot({
         <h2 className="text-sm font-semibold">Chat with Assistant</h2>
         <button
           onClick={handleClear}
-          disabled={isThinking}
+          disabled={isThinking || isLoading}
           className="text-xs text-gray-500 hover:text-blue-500 disabled:opacity-40 transition-colors"
         >
           New Chat
         </button>
       </div>
+
+      {/* Model status banners */}
+      {isLoading && (
+        <div className="px-2 py-1 bg-yellow-50 text-yellow-700 border-b">
+          <div className="flex items-center justify-between text-xs">
+            <span>
+              Loading Acorn
+              {progress && progress.total > 0
+                ? `… ${progress.percent.toFixed(0)}%`
+                : "…"}
+            </span>
+            {progress && progress.total > 0 && (
+              <span className="tabular-nums">
+                {formatMB(progress.loaded)} / {formatMB(progress.total)} MB
+              </span>
+            )}
+          </div>
+          {progress && progress.total > 0 && (
+            <div className="mt-1 h-1 w-full rounded bg-yellow-100 overflow-hidden">
+              <div
+                className="h-full bg-yellow-500 transition-[width] duration-150"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      {isError && (
+        <div className="px-2 py-1 text-xs text-center bg-red-50 text-red-700 border-b">
+          Failed to load model. Please refresh and try again.
+        </div>
+      )}
 
       {/* Messages area */}
       <ScrollArea className="flex-1 p-2 min-h-0 overflow-y-auto">
@@ -210,8 +260,15 @@ export function Chatbot({
             value={input}
             readOnly
             placeholder={
-              isThinking ? "Acorn is thinking..." : "Show a sign to the camera…"
+              isLoading
+                ? "Loading model..."
+                : isError
+                  ? "Unavailable"
+                  : isThinking
+                    ? "Acorn is thinking..."
+                    : "Show a sign to the camera…"
             }
+            disabled={isLoading || isError}
             className="flex-1 h-8 text-sm cursor-default select-none"
           />
           <Button
@@ -219,7 +276,7 @@ export function Chatbot({
             size="sm"
             variant="outline"
             className="h-8 w-8 p-0"
-            disabled={!input.trim() || isThinking}
+            disabled={!input.trim() || isThinking || isLoading}
             title="Delete last sign"
           >
             <Delete size={14} />
@@ -228,7 +285,7 @@ export function Chatbot({
             onClick={handleSend}
             size="sm"
             className="h-8 w-8 p-0"
-            disabled={!input.trim() || isThinking}
+            disabled={!input.trim() || isThinking || isLoading}
             title="Send"
           >
             <Send size={14} />
