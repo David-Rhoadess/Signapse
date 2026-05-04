@@ -601,9 +601,9 @@ export function ChatLog() {
           </p>
         </header>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 bg-gray-100">
           <div
-            className="space-y-4 pb-4"
+            className="space-y-4 pb-4 bg-gray-100"
             role="feed"
             aria-label="Chat sessions"
           >
