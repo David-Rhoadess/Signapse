@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Delete } from "lucide-react";
-import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { useTextGenerator } from "../../hooks/useTextGenerator";
@@ -93,6 +92,7 @@ export function Chatbot({
   const [isThinking, setIsThinking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const turnCount = useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { status, progress } = useTextGenerator();
 
@@ -115,6 +115,12 @@ export function Chatbot({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking]);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.scrollLeft = inputRef.current.scrollWidth;
+    }
+  }, [input]);
 
   const handleSend = async () => {
     if (!input.trim() || isThinking || status !== "ready") return;
@@ -256,7 +262,8 @@ export function Chatbot({
           Signs detected by camera appear here
         </p>
         <div className="flex gap-1">
-          <Input
+          <input
+            ref={inputRef}
             value={input}
             readOnly
             placeholder={
@@ -269,7 +276,7 @@ export function Chatbot({
                     : "Show a sign to the camera…"
             }
             disabled={isLoading || isError}
-            className="flex-1 h-8 text-sm cursor-default select-none"
+            className="flex-1 h-8 text-sm cursor-default select-none rounded-md border border-input bg-background px-3 py-1 shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
           />
           <Button
             onClick={handleDeleteLastSign}
