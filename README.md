@@ -1,4 +1,4 @@
-# Signapse
+# AcornSL
 
 ## Running the code
 
