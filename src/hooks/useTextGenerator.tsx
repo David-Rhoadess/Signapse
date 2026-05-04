@@ -23,7 +23,8 @@ export interface GenerateResult {
 export function useTextGenerator() {
   const modelRef = useRef<any>(null);
   const processorRef = useRef<any>(null);
-  const conversationHistory = useRef<ChatMessage[]>([]);
+  // const conversationHistory = useRef<ChatMessage[]>([]);
+  const turnCount = useRef(0);
 
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -126,7 +127,6 @@ export function useTextGenerator() {
     if (!modelRef.current || !processorRef.current) {
       return { reply: "Model is not ready yet.", emotion: "confused" };
     }
-
     if (status !== "ready") {
       return { reply: "Model is still loading.", emotion: "confused" };
     }
@@ -134,17 +134,12 @@ export function useTextGenerator() {
     setStatus("generating");
     setErrorMessage(null);
 
-    const newMessage: ChatMessage = {
-      role: "user",
-      content: prompt,
-    };
+    turnCount.current += 1; // ← increment on each user message
 
     try {
-      console.log("start generating response");
       const messages = [
         { role: "system", content: systemPrompt },
-        ...conversationHistory.current,
-        newMessage,
+        { role: "user", content: String(turnCount.current) }, // ← just the number
       ];
 
       const text = processorRef.current.apply_chat_template(messages, {
@@ -153,9 +148,7 @@ export function useTextGenerator() {
         enable_thinking: false,
       });
 
-      const inputs = await processorRef.current(text, {
-        return_tensors: "pt",
-      });
+      const inputs = await processorRef.current(text, { return_tensors: "pt" });
 
       const outputIds = await modelRef.current.generate({
         ...inputs,
@@ -171,7 +164,6 @@ export function useTextGenerator() {
         inputs.input_ids.dims.at(-1),
         null,
       ]);
-
       const rawReply =
         processorRef.current.batch_decode(newTokens, {
           skip_special_tokens: true,
@@ -181,21 +173,17 @@ export function useTextGenerator() {
 
       const replyResult = parseJSON<{ emotion: string; reply: string }>(
         rawReply,
-        { emotion: "confused", reply: rawReply },
+        {
+          emotion: "confused",
+          reply: rawReply,
+        },
       );
-      console.log("LLM response:", replyResult);
-
-      conversationHistory.current = [
-        ...conversationHistory.current,
-        newMessage,
-        { role: "assistant", content: replyResult.reply },
-      ];
 
       setStatus("ready");
       return replyResult;
     } catch (err) {
       console.error("Generation error:", err);
-      setStatus("ready"); // allow retry
+      setStatus("ready");
       setErrorMessage("Failed to generate response. Please try again.");
       return {
         reply: "Something went wrong. Please try again.",
@@ -205,7 +193,8 @@ export function useTextGenerator() {
   }
 
   function resetHistory() {
-    conversationHistory.current = [];
+    // conversationHistory.current = [];
+    turnCount.current = 0;
     setErrorMessage(null);
     setStatus("ready");
   }
