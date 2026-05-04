@@ -152,7 +152,7 @@ export function useTextGenerator() {
 
       const outputIds = await modelRef.current.generate({
         ...inputs,
-        max_new_tokens: 512,
+        max_new_tokens: 80,
         do_sample: false,
         temperature: 1.0,
         top_p: 1.0,
